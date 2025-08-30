@@ -1,3 +1,28 @@
-//! event_interpreter module for event_interpreter
+use crate::event_interpreter::interpret_domain::SystemEvent;
+use crate::event_interpreter::interpret_codomain::{InternalEvent, InputKind};
 
-// TODO: implement
+/// Actor funcional que interpreta eventos crudos del sistema
+/// y los convierte en eventos funcionales internos.
+pub struct EventInterpreter;
+
+impl EventInterpreter {
+    pub fn interpret(input: SystemEvent) -> InternalEvent {
+        match input {
+            SystemEvent::TickSignal => InternalEvent::Tick,
+
+            SystemEvent::KeyDown(key) => InternalEvent::Input {
+                kind: InputKind::KeyPressed(key),
+            },
+
+            SystemEvent::KeyUp(key) => InternalEvent::Input {
+                kind: InputKind::KeyReleased(key),
+            },
+
+            SystemEvent::MouseMove(x, y) => InternalEvent::Input {
+                kind: InputKind::MouseMoved(x, y),
+            },
+
+            SystemEvent::ExitRequested => InternalEvent::SystemExit,
+        }
+    }
+}
