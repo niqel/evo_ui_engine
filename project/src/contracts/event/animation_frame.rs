@@ -1,5 +1,5 @@
 /// Información temporal para animación por tick.
-/// Útil para `time_ticker` y `animator` sin acoplar a un reloj específico.
+/// Útil para `ticker` y `animator` sin acoplar a un reloj específico.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AnimationFrame {
     /// Número de tick/frames transcurridos (monótono).

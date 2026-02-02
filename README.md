@@ -44,15 +44,15 @@ Todo cambio en la UI es desencadenado por un sistema de eventos puramente funcio
 - `Event` (usado por los acetatos)
 
 ### 📸 Snapshot
-El `Translator` convierte una `Scene` en una `Snapshot` optimizada para ser pintada por el `Renderer`.
+El `SnapshotBuilder` convierte una `Scene` en una `Snapshot` optimizada para ser pintada por el `Renderer`.
 
 ### 🧠 Actors Funcionales
 Cada operación está a cargo de un actor con una única responsabilidad:
 - `Renderer::render(snapshot)`
 - `Animator::animate(event)`
-- `Translator::translate(scene)`
-- `EventInterpreter::interpret(system_event)`
-- `TimeTicker::tick()`
+- `SnapshotBuilder::build(scene)`
+- `EventRouter::interpret(system_event)`
+- `Ticker::tick()`
 
 ---
 
@@ -92,13 +92,14 @@ Cada operación está a cargo de un actor con una única responsabilidad:
 ```rust
 let tick = ticker.tick();
 let system_event = winit_event();
-let internal = interpreter.interpret(system_event);
-let events = translator.translate(internal);
+let internal = event_router.interpret(system_event);
+let events = input_mapper.translate(internal);
 let animations = animator.animate(events);
 let updated_acetates = react_acetates(events + animations);
 let scene = Scene::from(updated_acetates);
-let snapshot = translator.translate(scene);
+let snapshot = snapshot_builder.build(scene);
 renderer.render(snapshot);
+```
 
 
 🧪 Roadmap

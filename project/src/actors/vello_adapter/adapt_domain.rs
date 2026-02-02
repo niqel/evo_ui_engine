@@ -1,5 +1,5 @@
-//! Dominio del actor VelloAdapter: lo que viene del Translator.
-use crate::translator::Snapshot;
+//! Dominio del actor VelloAdapter: lo que viene del SnapshotBuilder.
+use crate::core::Snapshot;
 
-/// Dominio: salida del Translator (lista para adaptar a Vello).
+/// Dominio: salida del SnapshotBuilder (lista para adaptar a Vello).
 pub type AdaptDomain = Snapshot;

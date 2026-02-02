@@ -1,9 +1,9 @@
 use crate::core::{Snapshot, SnapshotLayer, SnapshotStyle, TranslateDomain, Rect as SnapRect};
 
-pub struct Translator;
+pub struct SnapshotBuilder;
 
-impl Translator {
-    pub fn translate(scene: TranslateDomain) -> Snapshot {
+impl SnapshotBuilder {
+    pub fn build(scene: TranslateDomain) -> Snapshot {
         let mut layers: Vec<SnapshotLayer> = scene
             .acetates
             .iter()

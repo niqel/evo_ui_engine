@@ -1,4 +1,4 @@
-//! codominio module for translator
+//! codominio module for snapshot_builder
 
 // TODO: implement
 /// Representa una proyección visual funcional de la Scene,

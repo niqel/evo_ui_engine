@@ -1,7 +1,7 @@
 mod tick_domain;
 mod tick_codomain;
-mod time_ticker;
+mod ticker;
 
 pub use tick_domain::{TickDomain, tick};
 pub use tick_codomain::TickCodomain;
-pub use time_ticker::TimeTicker;
+pub use ticker::Ticker;

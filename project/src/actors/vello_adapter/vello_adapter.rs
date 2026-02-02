@@ -1,5 +1,5 @@
 //! Snapshot -> vello::Scene (adapter)
-//! Convierte el codominio del Translator (Snapshot) en una vello::Scene.
+//! Convierte el codominio del SnapshotBuilder (Snapshot) en una vello::Scene.
 
 use crate::core::{Snapshot, SnapshotLayer, Color, Rect as SnapRect};
 

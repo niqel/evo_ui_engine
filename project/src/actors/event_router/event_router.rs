@@ -3,9 +3,9 @@ use super::interpret_codomain::{InternalEvent, InputKind};
 
 /// Actor funcional que interpreta eventos crudos del sistema
 /// y los convierte en eventos funcionales internos.
-pub struct EventInterpreter;
+pub struct EventRouter;
 
-impl EventInterpreter {
+impl EventRouter {
     pub fn interpret(input: SystemEvent) -> InternalEvent {
         match input {
             SystemEvent::TickSignal => InternalEvent::Tick,

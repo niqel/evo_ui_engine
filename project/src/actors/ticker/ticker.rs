@@ -3,11 +3,11 @@ use super::tick_domain::{TickDomain, tick};
 use super::tick_codomain::TickCodomain;
 
 /// Actor que emite ticks funcionales.
-pub struct TimeTicker {
+pub struct Ticker {
     last_tick: TickCodomain,
 }
 
-impl TimeTicker {
+impl Ticker {
     /// Crea un nuevo ticker con un instante base.
     pub fn new(initial_instant: Instant) -> Self {
         let initial_tick = TickCodomain::new(0, initial_instant);

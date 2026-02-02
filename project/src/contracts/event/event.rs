@@ -22,6 +22,7 @@ pub enum Event {
 
     // Puntero
     MouseMoved(i32, i32),
+    MouseClicked,
     MouseDown { button: MouseButton, x: i32, y: i32 },
     MouseUp   { button: MouseButton, x: i32, y: i32 },
 

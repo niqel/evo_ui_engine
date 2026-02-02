@@ -1,5 +1,5 @@
 pub mod translate_domain;
-pub mod translate_codomain; // Snapshot*, Color, Rect (del translator)
+pub mod translate_codomain; // Snapshot*, Color, Rect (del snapshot_builder)
 pub mod render_domain;
 pub mod rendered_frame;
 
