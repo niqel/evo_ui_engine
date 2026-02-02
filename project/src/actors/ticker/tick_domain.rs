@@ -11,7 +11,7 @@ pub struct TickDomain {
 pub fn tick(input: TickDomain) -> TickCodomain {
     TickCodomain {
         number: input.tick_number + 1,
-        timestamp: Instant::now(), // También puedes usar input.start_instant si prefieres control total
+        timestamp: input.start_instant,
         events: vec![],
     }
 }
