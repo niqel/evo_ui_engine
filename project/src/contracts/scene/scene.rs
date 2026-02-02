@@ -35,3 +35,27 @@ impl Scene {
         }
     }
 }
+
+impl From<Vec<Box<dyn Acetate>>> for Scene {
+    fn from(acetates: Vec<Box<dyn Acetate>>) -> Self {
+        let mut max_x = 0u32;
+        let mut max_y = 0u32;
+
+        for acetate in &acetates {
+            let area = acetate.area();
+            max_x = max_x.max((area.x.max(0) as u32).saturating_add(area.width));
+            max_y = max_y.max((area.y.max(0) as u32).saturating_add(area.height));
+        }
+
+        Scene {
+            width: max_x,
+            height: max_y,
+            metrics: Metrics {
+                scale: 1.0,
+                margin: 0,
+                spacing: 0,
+            },
+            acetates,
+        }
+    }
+}
