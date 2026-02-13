@@ -101,6 +101,25 @@ let snapshot = snapshot_builder.build(scene);
 renderer.render(snapshot);
 ```
 
+## 🧾 UI TOML v0
+
+Ejemplo minimo con defaults (z=0, border transparente, border_thickness=0.0):
+
+```toml
+[scene]
+width = 800
+height = 600
+
+[[acetate]]
+id = "hero"
+x = 40
+y = 40
+w = 320
+h = 180
+fill = "#2d9cdb"
+text = "Hola"
+```
+
 
 🧪 Roadmap
 

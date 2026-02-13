@@ -5,14 +5,17 @@ use super::acetate_io::AcetateIO;
 use super::scene_info::SceneInfo;
 use super::design::AcetateDesign;
 
-use crate::contracts::event::Event;
+use crate::contracts::event::{Event, EventKind};
 
 pub trait Acetate: Send + Sync + Debug {
     fn id(&self) -> String;
     fn name(&self) -> String;
     fn z_index(&self) -> i32;
     fn area(&self) -> Rect;
-    fn subscriptions(&self) -> Vec<Event>;
+    fn subscriptions(&self) -> Vec<EventKind>;
+    fn is_subscribed_to(&self, incoming: &Event) -> bool {
+        self.subscriptions().contains(&incoming.kind())
+    }
 
     fn react(&self, event: &Event, scene: &SceneInfo) -> Option<Box<dyn Acetate>>;
     fn perceive(&self, scene: &SceneInfo) -> SceneInfo;

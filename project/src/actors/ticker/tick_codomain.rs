@@ -2,7 +2,7 @@ use std::time::Instant;
 use crate::contracts::event::Event;
 
 /// Representa un instante funcional en el tiempo
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TickCodomain {
     pub number: u64,
     pub timestamp: Instant,

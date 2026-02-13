@@ -7,7 +7,7 @@ use std::time::Instant;
 use evo_ui_engine::actors::renderer::RendererVello;
 use evo_ui_engine::actors::snapshot_builder::SnapshotBuilder;
 use evo_ui_engine::actors::ticker::Ticker;
-use evo_ui_engine::contracts::event::Event;
+use evo_ui_engine::contracts::event::{Event, EventKind};
 use evo_ui_engine::contracts::scene::{
     Acetate, AcetateDesign, AcetateIO, AcetateStatus, Rect, Scene, SceneInfo,
 };
@@ -51,7 +51,7 @@ impl Acetate for SimpleAcetate {
         self.area.clone()
     }
 
-    fn subscriptions(&self) -> Vec<Event> {
+    fn subscriptions(&self) -> Vec<EventKind> {
         vec![]
     }
 
