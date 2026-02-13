@@ -11,6 +11,8 @@ pub struct UiToml {
 pub struct SceneToml {
     pub width: u32,
     pub height: u32,
+    #[serde(default)]
+    pub includes: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -107,6 +107,7 @@ struct RawUiToml {
 struct RawSceneToml {
     width: Option<i64>,
     height: Option<i64>,
+    includes: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -125,6 +126,12 @@ struct RawAcetateToml {
     border_thickness: f32,
     #[serde(default)]
     text: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawIncludeToml {
+    #[serde(default)]
+    acetate: Vec<RawAcetateToml>,
 }
 
 fn default_z_i64() -> i64 {
@@ -293,18 +300,23 @@ fn parse_i32(
     Ok(value as i32)
 }
 
-pub fn load_scene_from_str(toml_str: &str) -> Result<Scene, UiTomlError> {
-    let raw: RawUiToml = toml::from_str(toml_str)?;
+fn build_scene_from_raw(
+    raw: RawUiToml,
+    include_acetates: Vec<RawAcetateToml>,
+) -> Result<Scene, UiTomlError> {
     let scene = require_field(raw.scene, "scene", None)?;
     let scene_width = require_field(scene.width, "scene.width", None)?;
     let scene_height = require_field(scene.height, "scene.height", None)?;
     let width = parse_u32_dimensions(scene_width, "scene.width", None)?;
     let height = parse_u32_dimensions(scene_height, "scene.height", None)?;
 
-    let mut acetates: Vec<Box<dyn Acetate>> = Vec::with_capacity(raw.acetate.len());
-    let mut parsed_acetate = Vec::with_capacity(raw.acetate.len());
+    let mut raw_acetates = raw.acetate;
+    raw_acetates.extend(include_acetates);
 
-    for (index, acetate) in raw.acetate.into_iter().enumerate() {
+    let mut acetates: Vec<Box<dyn Acetate>> = Vec::with_capacity(raw_acetates.len());
+    let mut parsed_acetate = Vec::with_capacity(raw_acetates.len());
+
+    for (index, acetate) in raw_acetates.into_iter().enumerate() {
         let id = require_field(acetate.id, "id", Some(index))?;
         let z = parse_i32(acetate.z, "z", Some(index))?;
         let x = parse_i32(require_field(acetate.x, "x", Some(index))?, "x", Some(index))?;
@@ -348,7 +360,102 @@ pub fn load_scene_from_str(toml_str: &str) -> Result<Scene, UiTomlError> {
     })
 }
 
+pub fn load_scene_from_str(toml_str: &str) -> Result<Scene, UiTomlError> {
+    let raw: RawUiToml = toml::from_str(toml_str)?;
+    build_scene_from_raw(raw, vec![])
+}
+
 pub fn load_scene_from_file(path: impl AsRef<Path>) -> Result<Scene, UiTomlError> {
+    let path = path.as_ref();
     let toml_str = fs::read_to_string(path)?;
-    load_scene_from_str(&toml_str)
+    let raw: RawUiToml = toml::from_str(&toml_str)?;
+
+    let mut include_acetates = Vec::new();
+    let includes = raw
+        .scene
+        .as_ref()
+        .and_then(|scene| scene.includes.clone())
+        .unwrap_or_default();
+    let base_dir = path.parent().unwrap_or(Path::new("."));
+
+    for include in includes {
+        let include_path = base_dir.join(&include);
+        let include_str = fs::read_to_string(&include_path).map_err(|err| {
+            UiTomlError::Io(std::io::Error::new(
+                err.kind(),
+                format!("failed to read include '{}': {}", include_path.display(), err),
+            ))
+        })?;
+        let include_raw: RawIncludeToml = toml::from_str(&include_str).map_err(|err| {
+            UiTomlError::ParseToml(toml::de::Error::custom(format!(
+                "in include '{}': {}",
+                include_path.display(),
+                err
+            )))
+        })?;
+        include_acetates.extend(include_raw.acetate);
+    }
+
+    build_scene_from_raw(raw, include_acetates)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn load_scene_from_file_merges_includes_relative_to_root() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock drift")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("evo_ui_engine_ui_toml_{unique}"));
+        let includes_dir = root.join("src/acetates");
+        fs::create_dir_all(&includes_dir).expect("create include dir");
+
+        let include_path = includes_dir.join("space.toml");
+        fs::write(
+            &include_path,
+            r##"
+[[acetate]]
+id = "from_include"
+x = 4
+y = 5
+w = 60
+h = 30
+fill = "#445566"
+"##,
+        )
+        .expect("write include");
+
+        let root_path = root.join("ui.toml");
+        fs::write(
+            &root_path,
+            r##"
+[scene]
+width = 800
+height = 450
+includes = ["src/acetates/space.toml"]
+
+[[acetate]]
+id = "root"
+x = 1
+y = 2
+w = 10
+h = 20
+fill = "#112233"
+"##,
+        )
+        .expect("write root ui");
+
+        let scene = load_scene_from_file(&root_path).expect("load scene");
+        assert_eq!(scene.width, 800);
+        assert_eq!(scene.height, 450);
+        assert_eq!(scene.acetates.len(), 2);
+
+        let _ = fs::remove_file(&root_path);
+        let _ = fs::remove_file(&include_path);
+        let _ = fs::remove_dir_all(&root);
+    }
 }
