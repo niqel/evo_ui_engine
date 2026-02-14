@@ -39,6 +39,33 @@ pub struct FrameContext {
     pub fps: Option<f64>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct InputWants {
+    pub mouse_move: bool,
+    pub mouse_buttons: bool,
+    pub keyboard: bool,
+    pub text_input: bool,
+    pub tick: bool,
+    pub resize: bool,
+}
+
+impl Default for InputWants {
+    fn default() -> Self {
+        Self {
+            mouse_move: false,
+            mouse_buttons: false,
+            keyboard: false,
+            text_input: false,
+            tick: false,
+            resize: true,
+        }
+    }
+}
+
 pub trait App {
+    fn input_wants(&self) -> InputWants {
+        InputWants::default()
+    }
+
     fn frame(&mut self, events: &[Event], ctx: &FrameContext, input: &InputState) -> Scene;
 }

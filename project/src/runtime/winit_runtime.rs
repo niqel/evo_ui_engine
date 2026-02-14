@@ -216,8 +216,11 @@ impl<A: App> Runner<A> {
         self.last_frame_at = now;
 
         let tick = self.ticker.tick();
+        let wants = self.app.input_wants();
         let mut events = Vec::with_capacity(self.pending_events.len() + 1);
-        events.push(Event::Tick(tick.clone()));
+        if wants.tick {
+            events.push(Event::Tick(tick.clone()));
+        }
         events.extend(std::mem::take(&mut self.pending_events));
 
         let ctx = FrameContext {
@@ -370,6 +373,7 @@ impl<A: App> ApplicationHandler for Runner<A> {
         if Some(window_id) != self.window_id {
             return;
         }
+        let wants = self.app.input_wants();
 
         match event {
             WindowEvent::CloseRequested => {
@@ -385,7 +389,9 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 if let Some(gpu) = self.gpu.as_mut() {
                     gpu.resize(width, height);
                 }
-                self.queue_event(Event::WindowResized { width, height });
+                if wants.resize {
+                    self.queue_event(Event::WindowResized { width, height });
+                }
                 if let Some(window) = &self.window {
                     window.request_redraw();
                 }
@@ -399,21 +405,29 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 if let Some(gpu) = self.gpu.as_mut() {
                     gpu.resize(width, height);
                 }
-                self.queue_event(Event::WindowResized { width, height });
+                if wants.resize {
+                    self.queue_event(Event::WindowResized { width, height });
+                }
                 if let Some(window) = &self.window {
                     window.request_redraw();
                 }
             }
             WindowEvent::CursorMoved { position, .. } => {
+                self.input.mouse_x = position.x.round() as i32;
+                self.input.mouse_y = position.y.round() as i32;
+                if !wants.mouse_move {
+                    return;
+                }
                 let system_event =
                     SystemEvent::MouseMove(position.x.round() as i32, position.y.round() as i32);
                 let internal_event = EventRouter::interpret(system_event);
                 let app_event = InputMapper::translate(internal_event);
-                self.input.mouse_x = position.x.round() as i32;
-                self.input.mouse_y = position.y.round() as i32;
                 self.queue_event(app_event);
             }
             WindowEvent::MouseInput { state, button, .. } => {
+                if !wants.mouse_buttons {
+                    return;
+                }
                 let Some(mapped) = map_mouse_button(button) else {
                     return;
                 };
@@ -441,6 +455,9 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 }
             }
             WindowEvent::KeyboardInput { event, .. } => {
+                if !wants.keyboard {
+                    return;
+                }
                 let key = key_event_to_string(&event);
                 match event.state {
                     ElementState::Pressed => {
@@ -454,6 +471,9 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 }
             }
             WindowEvent::Ime(Ime::Commit(text)) => {
+                if !wants.text_input {
+                    return;
+                }
                 self.input.text_buffer = Some(text.clone());
                 self.queue_event(Event::TextInput(text));
             }

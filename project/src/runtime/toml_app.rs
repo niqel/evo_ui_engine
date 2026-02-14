@@ -4,11 +4,9 @@ use std::time::{Duration, Instant, SystemTime};
 use crate::contracts::event::Event;
 use crate::contracts::scene::{Acetate, AcetateDesign, AcetateIO, AcetateStatus, Rect, Scene, SceneInfo};
 use crate::core::Color;
-use crate::runtime::app::{App, FrameContext, InputState};
+use crate::runtime::app::{App, FrameContext, InputState, InputWants};
 use crate::ui_toml::load_scene_from_file;
 
-const MOVER_WIDTH: u32 = 160;
-const MOVER_HEIGHT: u32 = 90;
 const BG_Z_INDEX: i32 = -100_000;
 
 #[derive(Debug, Clone)]
@@ -107,9 +105,6 @@ impl SceneTemplate {
         Self { layers }
     }
 
-    fn max_z(&self) -> i32 {
-        self.layers.iter().map(|layer| layer.z_index).max().unwrap_or(0)
-    }
 }
 
 pub struct TomlApp {
@@ -117,8 +112,6 @@ pub struct TomlApp {
     ui_path: String,
     last_mtime: Option<SystemTime>,
     last_reload_check: Instant,
-    mover_x: i32,
-    mover_y: i32,
 }
 
 impl TomlApp {
@@ -140,8 +133,6 @@ impl TomlApp {
             last_mtime: read_mtime(&ui_path),
             ui_path,
             last_reload_check: Instant::now(),
-            mover_x: 20,
-            mover_y: 20,
         }
     }
 
@@ -176,29 +167,8 @@ impl TomlApp {
         }
     }
 
-    fn clamp_mover_position(x: i32, y: i32, width: u32, height: u32) -> (i32, i32) {
-        let max_x = (width as i32 - MOVER_WIDTH as i32).max(0);
-        let max_y = (height as i32 - MOVER_HEIGHT as i32).max(0);
-        (x.clamp(0, max_x), y.clamp(0, max_y))
-    }
-
-    fn apply_events(&mut self, events: &[Event], width: u32, height: u32) {
-        for event in events {
-            if let Event::MouseMoved(x, y) = event {
-                let target_x = x - (MOVER_WIDTH as i32 / 2);
-                let target_y = y - (MOVER_HEIGHT as i32 / 2);
-                let (clamped_x, clamped_y) =
-                    Self::clamp_mover_position(target_x, target_y, width, height);
-                self.mover_x = clamped_x;
-                self.mover_y = clamped_y;
-            }
-        }
-    }
-
     fn build_scene(&self, width: u32, height: u32) -> Scene {
-        let (x, y) = Self::clamp_mover_position(self.mover_x, self.mover_y, width, height);
         let mut acetates: Vec<Box<dyn Acetate>> = Vec::new();
-        let mut has_mover = false;
         let mut has_bg = false;
 
         for layer in &self.scene_template.layers {
@@ -210,12 +180,6 @@ impl TomlApp {
                 design.area.width = width;
                 design.area.height = height;
                 has_bg = true;
-            }
-
-            if layer.id == "mover" {
-                design.area.x = x;
-                design.area.y = y;
-                has_mover = true;
             }
 
             if design.area.width == 0 {
@@ -262,34 +226,20 @@ impl TomlApp {
             )));
         }
 
-        if !has_mover {
-            acetates.push(Box::new(SimpleAcetate::new(
-                "mover",
-                "Mover",
-                self.scene_template.max_z() + 1,
-                AcetateDesign {
-                    area: Rect {
-                        x,
-                        y,
-                        width: MOVER_WIDTH.min(width.max(1)),
-                        height: MOVER_HEIGHT.min(height.max(1)),
-                    },
-                    background: default_mover_fill(),
-                    border: default_mover_border(),
-                    border_thickness: 2.0,
-                    text: None,
-                },
-            )));
-        }
-
         Scene::from(acetates)
     }
 }
 
 impl App for TomlApp {
-    fn frame(&mut self, events: &[Event], ctx: &FrameContext, _input: &InputState) -> Scene {
+    fn input_wants(&self) -> InputWants {
+        InputWants {
+            resize: true,
+            ..InputWants::default()
+        }
+    }
+
+    fn frame(&mut self, _events: &[Event], ctx: &FrameContext, _input: &InputState) -> Scene {
         self.maybe_hot_reload();
-        self.apply_events(events, ctx.window_width, ctx.window_height);
         self.build_scene(ctx.window_width, ctx.window_height)
     }
 }
@@ -299,24 +249,6 @@ fn default_background_color() -> Color {
         r: 0.08,
         g: 0.10,
         b: 0.14,
-        a: 1.0,
-    }
-}
-
-fn default_mover_fill() -> Color {
-    Color {
-        r: 0.20,
-        g: 0.70,
-        b: 0.35,
-        a: 1.0,
-    }
-}
-
-fn default_mover_border() -> Color {
-    Color {
-        r: 0.95,
-        g: 0.95,
-        b: 0.95,
         a: 1.0,
     }
 }
